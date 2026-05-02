@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Gabriel Sabino - GS Consultoria</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{overflow:hidden;background:#05080f;font-family:'Nunito',sans-serif;cursor:none;}
+canvas{display:block;position:fixed;inset:0;}
+#cur{position:fixed;width:9px;height:9px;background:#2d8dff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);}
+#cring{position:fixed;width:25px;height:25px;border:1.5px solid rgba(45,141,255,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);}
+/* INTRO - JARVIS BOOT SEQUENCE */
+#intro{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0a1428 0%,#02030a 70%);transition:opacity 1.2s;overflow:hidden;}
+#intro.out{opacity:0;pointer-events:none;}
+.iscan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(45,141,255,.025) 2px,rgba(45,141,255,.025) 4px);pointer-events:none;}
+.iscan::after{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(102,194,255,.55),transparent);animation:iscanline 4s linear infinite;}
+@keyframes iscanline{0%{top:-2px;}100%{top:100%;}}
+.icorner{position:absolute;pointer-events:none;opacity:0;animation:fadeup .6s ease forwards;}
+.icorner.tl{top:20px;left:20px;width:80px;height:80px;border-top:2px solid rgba(102,194,255,.7);border-left:2px solid rgba(102,194,255,.7);animation-delay:.1s;}
+.icorner.tr{top:20px;right:20px;width:80px;height:80px;border-top:2px solid rgba(102,194,255,.7);border-right:2px solid rgba(102,194,255,.7);animation-delay:.15s;}
+.icorner.bl{bottom:20px;left:20px;width:80px;height:80px;border-bottom:2px solid rgba(102,194,255,.7);border-left:2px solid rgba(102,194,255,.7);animation-delay:.2s;}
+.icorner.br{bottom:20px;right:20px;width:80px;height:80px;border-bottom:2px solid rgba(102,194,255,.7);border-right:2px solid rgba(102,194,255,.7);animation-delay:.25s;}
+/* Boot log top-left */
+#bootlog{position:absolute;top:115px;left:30px;font-family:'Courier New',monospace;font-size:10.5px;color:#66c2ff;letter-spacing:1px;line-height:1.9;text-shadow:0 0 8px rgba(102,194,255,.5);max-width:340px;pointer-events:none;}
+#bootlog .bl{opacity:0;animation:bootln .25s ease forwards;}
+#bootlog .bl b{color:#9fdcff;}
+#bootlog .bl .ok{color:#36e58a;float:right;}
+@keyframes bootln{from{opacity:0;transform:translateX(-6px);}to{opacity:.92;transform:none;}}
+/* HUD top-right boot stats */
+#bootstats{position:absolute;top:115px;right:30px;font-family:'Courier New',monospace;font-size:10px;color:rgba(102,194,255,.65);letter-spacing:1.5px;text-align:right;line-height:2;text-transform:uppercase;}
+#bootstats span{display:block;opacity:0;animation:fadeup .4s ease forwards;}
+/* ARC reactor behind name */
+#arcwrap{position:relative;width:min(720px,92vw);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#arc{position:absolute;width:380px;height:380px;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;animation:arcin 1.2s ease .9s forwards;}
+@keyframes arcin{from{opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(-90deg);}to{opacity:.55;transform:translate(-50%,-50%) scale(1) rotate(0);}}
+#arc .ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(102,194,255,.4);box-shadow:0 0 60px rgba(45,141,255,.3),inset 0 0 60px rgba(45,141,255,.18);}
+#arc .ring.r2{inset:30px;border-color:rgba(102,194,255,.55);border-style:dashed;animation:arcrot 18s linear infinite;}
+#arc .ring.r3{inset:62px;border-color:rgba(159,220,255,.7);animation:arcrot 12s linear infinite reverse;}
+#arc .ring.r4{inset:96px;border:1px solid rgba(255,255,255,.4);box-shadow:0 0 40px rgba(102,194,255,.6),inset 0 0 30px rgba(102,194,255,.5);}
+#arc .core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#fff 0%,#9fdcff 25%,#2d8dff 60%,transparent 100%);filter:blur(2px);animation:arccore 2.4s ease-in-out infinite;}
+@keyframes arccore{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(1);}50%{opacity:.95;transform:translate(-50%,-50%) scale(1.15);}}
+@keyframes arcrot{from{transform:rotate(0);}to{transform:rotate(360deg);}}
+/* Welcome line */
+#welcome{font-size:clamp(11px,1.4vw,15px);letter-spacing:clamp(4px,1.2vw,12px);color:rgba(159,220,255,.85);text-transform:uppercase;font-weight:700;margin-bottom:18px;opacity:0;animation:fadeup .8s ease .4s forwards;text-shadow:0 0 20px rgba(102,194,255,.5);position:relative;z-index:2;text-align:center;}
+#welcome b{color:#fff;font-weight:900;}
+#jarvis-tag{font-size:10px;letter-spacing:5px;color:rgba(102,194,255,.75);text-transform:uppercase;margin-bottom:32px;opacity:0;animation:fadeup .8s ease .15s forwards;font-weight:700;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
+#jarvis-tag::before{content:'';width:8px;height:8px;border-radius:50%;background:#36e58a;box-shadow:0 0 10px #36e58a;animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+#intro-name{font-size:clamp(56px,9vw,118px);font-weight:900;color:#fff;letter-spacing:clamp(2px,.4vw,5px);margin:0 0 8px;text-align:center;text-shadow:0 0 50px rgba(45,141,255,.55),0 0 90px rgba(45,141,255,.25);position:relative;z-index:2;font-family:'Nunito',sans-serif;}
+#intro-name .ch{display:inline-block;opacity:0;transform:translateY(20px) scale(.6);filter:blur(8px);animation:chin .55s cubic-bezier(.2,.9,.3,1.4) forwards;}
+#intro-name .ch.sp{width:.35em;}
+#intro-name em{color:#2d8dff;font-style:normal;text-shadow:0 0 30px #2d8dff;}
+@keyframes chin{0%{opacity:0;transform:translateY(20px) scale(.6);filter:blur(8px);}60%{opacity:1;filter:blur(0);}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0);}}
+#intro-name.glitch{animation:nglitch .35s steps(2) 1;}
+@keyframes nglitch{0%{transform:translate(0);text-shadow:0 0 50px rgba(45,141,255,.55);}25%{transform:translate(-2px,1px);text-shadow:2px 0 0 #ff2d6a,-2px 0 0 #2d8dff;}50%{transform:translate(2px,-1px);text-shadow:-2px 0 0 #ff2d6a,2px 0 0 #2d8dff;}100%{transform:translate(0);}}
+#intro-sub{font-size:clamp(10px,1.05vw,12.5px);letter-spacing:clamp(4px,.8vw,7px);color:rgba(159,220,255,.55);text-transform:uppercase;margin-bottom:46px;font-weight:700;opacity:0;animation:fadeup .8s ease 2.2s forwards;position:relative;z-index:2;}
+#intro-sub b{color:#fff;}
+#enter-btn{position:relative;background:linear-gradient(135deg,rgba(45,141,255,.12),rgba(102,194,255,.06));border:1.5px solid rgba(102,194,255,.6);color:#fff;font-family:'Nunito',sans-serif;font-size:12px;font-weight:900;letter-spacing:6px;padding:18px 56px;cursor:pointer;text-transform:uppercase;transition:all .3s;opacity:0;animation:fadeup .8s ease 2.6s forwards,btnpulse 2.6s ease-in-out 3.4s infinite;overflow:hidden;z-index:2;}
+#enter-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(102,194,255,.35),transparent);transition:left .8s;}
+#enter-btn:hover{background:linear-gradient(135deg,rgba(45,141,255,.3),rgba(102,194,255,.18));border-color:#9fdcff;box-shadow:0 0 40px rgba(102,194,255,.6),inset 0 0 25px rgba(102,194,255,.15);transform:scale(1.04);}
+#enter-btn:hover::before{left:100%;}
+#enter-btn .arrow{display:inline-block;margin-left:10px;transition:transform .3s;}
+#enter-btn:hover .arrow{transform:translateX(6px);}
+@keyframes btnpulse{0%,100%{box-shadow:0 0 20px rgba(45,141,255,.3);}50%{box-shadow:0 0 45px rgba(102,194,255,.55);}}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@media(max-width:760px){
+  #bootlog,#bootstats{display:none;}
+  #arc{width:280px;height:280px;}
+  #arc .ring.r2{inset:20px;}#arc .ring.r3{inset:46px;}#arc .ring.r4{inset:74px;}
+}
+/* HUD */
+#logo{position:fixed;top:18px;left:20px;font-family:'Nunito',sans-serif;font-weight:900;font-size:19px;color:#fff;z-index:50;pointer-events:none;}
+#logo em{color:#2d8dff;font-style:normal;}
+#logo small{display:block;font-size:8px;letter-spacing:3px;color:rgba(255,255,255,.2);margin-top:2px;}
+#speedo{position:fixed;bottom:14px;right:160px;z-index:50;background:rgba(2,4,14,.85);border:1px solid rgba(45,141,255,.2);border-radius:10px;padding:9px 14px;text-align:center;backdrop-filter:blur(12px);}
+#spv{display:block;font-size:22px;font-weight:900;color:#fff;line-height:1;}
+#spl{font-size:8px;letter-spacing:2px;color:#2d8dff;margin-top:1px;}
+#mmwrap{position:fixed;bottom:14px;right:14px;z-index:50;border-radius:10px;overflow:hidden;border:1px solid rgba(45,141,255,.2);}
+#mm{width:140px;height:140px;display:block;}
+#hint{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(2,4,14,.82);border:1px solid rgba(45,141,255,.3);border-radius:20px;padding:7px 18px;color:#fff;font-size:10px;letter-spacing:2px;font-weight:700;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .3s;}
+#hint.show{opacity:1;}
+#controls{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;color:rgba(255,255,255,.22);font-size:10px;letter-spacing:1.5px;white-space:nowrap;}
+#controls b{color:#2d8dff;}
+#modebtn{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(2,4,14,.82);border:1px solid rgba(45,141,255,.25);border-radius:20px;padding:7px 18px;color:rgba(255,255,255,.55);font-size:10px;letter-spacing:1.5px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;transition:all .2s;}
+#modebtn.im{background:rgba(180,40,0,.25);border-color:#ff5500;color:#ff8800;}
+#jvbtn{position:fixed;top:14px;right:14px;z-index:50;background:rgba(2,4,14,.82);border:1px solid rgba(45,141,255,.35);border-radius:20px;padding:7px 14px;color:#66c2ff;font-size:10px;letter-spacing:2px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;display:flex;align-items:center;gap:6px;transition:all .2s;}
+#jvbtn:hover{background:rgba(45,141,255,.18);border-color:#66c2ff;}
+#jvbtn.off{opacity:.45;color:rgba(200,225,255,.55);}
+#jvbtn.speaking{border-color:#66c2ff;box-shadow:0 0 16px rgba(102,194,255,.5);animation:jvp 1.2s ease-in-out infinite;}
+@keyframes jvp{0%,100%{box-shadow:0 0 16px rgba(102,194,255,.5);}50%{box-shadow:0 0 28px rgba(102,194,255,.85);}}
+/* IRON MAN HUD */
+#imhud{position:fixed;inset:0;z-index:45;pointer-events:none;display:none;}
+#imhud .vig{position:absolute;inset:0;box-shadow:inset 0 0 150px 80px rgba(0,0,0,.82);}
+#imhud .c{position:absolute;width:68px;height:68px;border-color:#ff6600;border-style:solid;opacity:.6;}
+#imhud .tl{top:14px;left:14px;border-width:2.5px 0 0 2.5px;}
+#imhud .tr{top:14px;right:14px;border-width:2.5px 2.5px 0 0;}
+#imhud .bl{bottom:14px;left:14px;border-width:0 0 2.5px 2.5px;}
+#imhud .br{bottom:14px;right:14px;border-width:0 2.5px 2.5px 0;}
+#imhud .top{position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:4px;color:#ff9900;opacity:.8;text-transform:uppercase;white-space:nowrap;}
+#imhud .lp{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:9px;letter-spacing:2px;color:#ff9900;opacity:.6;line-height:2.4;}
+#imhud .rp{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:9px;letter-spacing:2px;color:#ff9900;opacity:.6;line-height:2.4;text-align:right;}
+#imhud .ch{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;}
+#imhud .ch div{position:absolute;background:#ff6600;opacity:.6;}
+#imhud .ch .h{width:14px;height:1px;top:50%;transform:translateY(-50%);}
+#imhud .ch .hl{left:0;}#imhud .ch .hr{right:0;}
+#imhud .ch .v{width:1px;height:14px;left:50%;transform:translateX(-50%);}
+#imhud .ch .vt{top:0;}#imhud .ch .vb{bottom:0;}
+#imhud .ch .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid #ff6600;top:50%;left:50%;transform:translate(-50%,-50%);}
+#imhud .arc{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:2px;color:#88ccff;opacity:.7;}
+#imhud .adot{width:8px;height:8px;border-radius:50%;background:#44aaff;box-shadow:0 0 8px #44aaff;animation:ap 1.5s ease-in-out infinite;}
+@keyframes ap{0%,100%{opacity:1;}50%{opacity:.2;}}
+#imscan{position:absolute;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,102,0,.5),transparent);animation:sc 4s linear infinite;}
+@keyframes sc{0%{top:0%;}100%{top:100%;}}
+#imalt{position:absolute;top:44px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:3px;color:#ff6600;opacity:.7;}
+/* NARR */
+#narr{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(2,4,14,.94);border:1px solid rgba(45,141,255,.4);border-radius:14px;padding:14px 22px;color:#fff;font-size:13px;font-weight:600;line-height:1.7;max-width:min(540px,90vw);text-align:center;pointer-events:none;opacity:0;transition:opacity .6s;box-shadow:0 0 30px rgba(45,141,255,.12);}
+#narr.show{opacity:1;}
+#narr-lbl{font-size:9px;letter-spacing:3px;color:#66c2ff;margin-bottom:6px;font-weight:700;}
+/* PANEL */
+#po{position:fixed;inset:0;background:rgba(0,0,12,.65);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(5px);}
+#po.show{opacity:1;pointer-events:all;}
+#panel{position:fixed;top:50%;right:-620px;transform:translateY(-50%);background:#fff;border-radius:20px;width:540px;max-width:92vw;max-height:86vh;display:flex;flex-direction:column;z-index:201;box-shadow:0 30px 90px rgba(0,0,0,.7);transition:right .42s cubic-bezier(.34,1.2,.64,1);}
+#panel.open{right:22px;}
+#ph{padding:22px 26px 46px;background:linear-gradient(135deg,#0d1a40,#0a1230);border-radius:20px 20px 0 0;position:relative;flex-shrink:0;border-bottom:1px solid rgba(45,141,255,.2);}
+#ptitle{font-size:18px;font-weight:900;color:#fff;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+#psub{font-size:11px;color:rgba(140,190,255,.75);letter-spacing:1px;font-weight:600;}
+#xcl{position:absolute;top:10px;right:12px;background:rgba(255,80,80,.18);border:1.5px solid rgba(255,120,120,.55);color:#fff;font-size:20px;font-weight:900;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:9999;pointer-events:all;line-height:1;padding:0;font-family:Arial,sans-serif;transition:all .2s;}
+#xcl:hover{background:rgba(255,80,80,.6);color:#fff;transform:scale(1.08);}
+#xclhint{position:absolute;top:54px;right:12px;font-size:9px;color:rgba(140,190,255,.5);letter-spacing:1.5px;font-weight:700;pointer-events:none;}
+/* INTERACT BUTTON (arrow popup near marker) */
+#interact{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;background:linear-gradient(135deg,#2d8dff,#1a5fb4);border:2px solid #66c2ff;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;letter-spacing:2px;padding:14px 22px;border-radius:50px;cursor:pointer;box-shadow:0 0 30px rgba(45,141,255,.6),0 8px 24px rgba(0,0,0,.5);display:none;align-items:center;gap:10px;text-transform:uppercase;animation:ipulse 1.4s ease-in-out infinite;pointer-events:all;}
+#interact.show{display:flex;}
+#interact:hover{transform:translate(-50%,-50%) scale(1.06);}
+#interact .arr{display:inline-block;font-size:18px;animation:iarr 1s ease-in-out infinite;}
+@keyframes ipulse{0%,100%{box-shadow:0 0 30px rgba(45,141,255,.6),0 8px 24px rgba(0,0,0,.5);}50%{box-shadow:0 0 50px rgba(102,194,255,.95),0 8px 30px rgba(0,0,0,.5);}}
+@keyframes iarr{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+#interact small{display:block;font-size:8px;letter-spacing:3px;color:rgba(200,225,255,.85);font-weight:700;margin-top:2px;}
+#pb{overflow-y:auto;padding:20px 24px 28px;flex:1;background:#fff;border-radius:0 0 20px 20px;}
+#pb::-webkit-scrollbar{width:3px;}#pb::-webkit-scrollbar-thumb{background:#2d8dff;border-radius:2px;}
+/* PANEL CONTENT */
+.sec{margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid #e8efff;}
+.sec:last-child{border-bottom:none;margin-bottom:0;}
+.st{font-size:9px;letter-spacing:3.5px;color:#1a4aae;text-transform:uppercase;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.st::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#b8d4ff,transparent);}
+.sec p{color:#2a3550;line-height:1.85;font-size:13.5px;margin-bottom:8px;}.sec strong{color:#0d1a3a;}
+.qb{background:linear-gradient(135deg,#f0f6ff,#e6f0ff);border-left:4px solid #2d8dff;border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:14px;font-style:italic;color:#2a3a5a;font-size:13.5px;line-height:1.8;}
+.tag{display:inline-block;background:#ebf3ff;border:1px solid #b8d4ff;color:#1a4aae;padding:4px 12px;border-radius:20px;font-size:10.5px;margin:3px;font-weight:700;letter-spacing:.5px;}
+.sk{margin:8px 0;}.skr{display:flex;justify-content:space-between;font-size:11.5px;color:#4a6080;margin-bottom:5px;font-weight:600;}
+.skr span:last-child{color:#1a5fb4;font-weight:800;}
+.skt{height:6px;background:#ddeeff;border-radius:4px;overflow:hidden;}
+.skf{height:100%;background:linear-gradient(90deg,#1a5fb4,#5b9cf6);border-radius:4px;}
+.ec{background:#f5f9ff;border:1px solid #cce0ff;border-radius:14px;padding:14px 16px;margin-bottom:10px;border-left:4px solid #2d8dff;}
+.eco{font-size:14px;font-weight:800;color:#0d1a3a;margin-bottom:2px;}.er{font-size:9px;color:#1a5fb4;letter-spacing:1.5px;margin:4px 0 6px;font-weight:700;text-transform:uppercase;}
+.ed{font-size:12px;color:#4a6080;line-height:1.7;}
+.kg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+.ki{background:linear-gradient(135deg,#ebf3ff,#ddeeff);border-radius:14px;padding:14px;text-align:center;border:1px solid #b8d4ff;}
+.kn{font-family:'Nunito',sans-serif;font-size:26px;font-weight:900;color:#1a5fb4;line-height:1;}
+.kl{font-size:10px;color:#6080a0;letter-spacing:1px;margin-top:4px;text-transform:uppercase;font-weight:700;}
+.ir{display:flex;flex-direction:column;gap:0;}
+.ir span{font-size:12.5px;color:#2a3550;display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f4ff;}
+.ir span:last-child{border-bottom:none;}
+.ir span b{color:#0d1a3a;min-width:80px;font-weight:800;flex-shrink:0;}
+@media(max-width:760px){
+  #panel{width:94vw;max-width:94vw;right:-100vw;}
+  #panel.open{right:3vw;}
+  #controls{font-size:9px;letter-spacing:1px;bottom:8px;}
+  #speedo{right:130px;padding:6px 10px;}
+  #spv{font-size:18px;}
+  #mm{width:110px;height:110px;}
+  #mmwrap{bottom:8px;right:8px;}
+  #modebtn{bottom:42px;font-size:9px;padding:6px 14px;}
+  #interact{font-size:11px;padding:11px 18px;}
+  body{cursor:auto;}
+  #cur,#cring{display:none;}
+}
+@media(hover:none){body{cursor:auto;} #cur,#cring{display:none;}}
+</style>
+</head>
+<body>
+<div id="cur"></div><div id="cring"></div>
+<div id="intro">
+  <div class="iscan"></div>
+  <div class="icorner tl"></div><div class="icorner tr"></div>
+  <div class="icorner bl"></div><div class="icorner br"></div>
+  <div id="bootlog"></div>
+  <div id="bootstats">
+    <span style="animation-delay:.2s">▸ STARK INDUSTRIES</span>
+    <span style="animation-delay:.4s">▸ JARVIS v.7.26</span>
+    <span style="animation-delay:.6s">▸ ARC REACTOR · 98%</span>
+    <span style="animation-delay:.8s">▸ GS CONSULTORIA</span>
+  </div>
+  <div id="jarvis-tag">JARVIS · Sistema Online</div>
+  <div id="welcome">Ladies and Gentlemen, <b>Welcome To</b></div>
+  <div id="arcwrap">
+    <div id="arc">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="ring r4"></div>
+      <div class="core"></div>
+    </div>
+    <div id="intro-name" aria-label="Gabriel Sabino"></div>
+    <div id="intro-sub">GS Consultoria · <b>Inteligência de Dados</b></div>
+    <button id="enter-btn" onclick="startGame()">Explorar<span class="arrow">▸</span></button>
+  </div>
+</div>
+<div id="logo">GS<em>.</em><small>GS CONSULTORIA</small></div>
+<div id="hint">APROXIME DE UM MARCO</div>
+<div id="controls"><b>WASD</b> dirigir &nbsp;·&nbsp; <b>SHIFT</b> turbo &nbsp;·&nbsp; <b>E</b> abrir &nbsp;·&nbsp; <b>V</b> aerea &nbsp;·&nbsp; <b>ESC</b> fechar</div>
+<div id="speedo"><span id="spv">0</span><div id="spl">KM/H</div></div>
+<div id="mmwrap"><canvas id="mm"></canvas></div>
+<button id="modebtn" onclick="toggleMode()">Iron Man</button>
+<button id="jvbtn" onclick="toggleJarvis()" title="JARVIS Voice"><span id="jvico">🔊</span><span id="jvlbl">JARVIS</span></button>
+<button id="interact" onclick="openNearMarker()" aria-label="Abrir marco"><span class="arr">▲</span><div><div>ABRIR</div><small>TOQUE OU TECLA E</small></div></button>
+<div id="imhud">
+  <div class="vig"></div>
+  <div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
+  <div class="top">STARK INDUSTRIES · JARVIS ONLINE · GS CONSULTORIA</div>
+  <div id="imalt">ALT: 0m</div>
+  <div id="imscan"></div>
+  <div class="lp">REPULSOR · ONLINE<br>JARVIS · ATIVO<br>ESCUDO · 100%<br><span id="imspd">VEL: 0</span></div>
+  <div class="rp">ENERGIA · 98%<br>MODO · VOO<br>GS · MISSAO<br><span id="imtgt">ALVO: ---</span></div>
+  <div class="ch"><div class="h hl"></div><div class="h hr"></div><div class="v vt"></div><div class="v vb"></div><div class="dot"></div></div>
+  <div class="arc"><div class="adot"></div>REATOR ARC · OPERACIONAL<div class="adot" style="animation-delay:.75s"></div></div>
+</div>
+<div id="po" onclick="closePanel()"></div>
+<div id="panel" role="dialog" aria-modal="true">
+  <div id="ph">
+    <button id="xcl" onclick="closePanel()" aria-label="Fechar">×</button>
+    <div id="xclhint">ESC FECHA</div>
+    <div id="ptitle"></div><div id="psub"></div>
+  </div>
+  <div id="pb"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ============== JARVIS BOOT INTRO ==============
+(function(){
+  // Build name letter-by-letter
+  const nameEl = document.getElementById('intro-name');
+  if(nameEl){
+    const txt = 'Gabriel Sabino.';
+    nameEl.innerHTML = '';
+    [...txt].forEach((c,i)=>{
+      const sp = document.createElement('span');
+      sp.className = 'ch' + (c===' '?' sp':'') + (c==='.'?' em':'');
+      sp.textContent = c;
+      sp.style.animationDelay = (1.05 + i*0.07) + 's';
+      if(c==='.'){ sp.style.color = '#2d8dff'; sp.style.textShadow='0 0 30px #2d8dff'; }
+      nameEl.appendChild(sp);
+    });
+    // Glitch flash after name finishes
+    setTimeout(()=>{
+      nameEl.classList.add('glitch');
+      setTimeout(()=>nameEl.classList.remove('glitch'),400);
+    }, 1050 + txt.length*70 + 300);
+  }
+  // Boot log lines
+  const lines = [
+    {t:'▸ Inicializando JARVIS', s:'OK', d:120},
+    {t:'▸ Reator Arc <b>online</b>', s:'98%', d:240},
+    {t:'▸ Carregando GS Consultoria', s:'OK', d:380},
+    {t:'▸ Calibrando Repulsores', s:'OK', d:540},
+    {t:'▸ Conexão Stark Net', s:'SECURE', d:700},
+    {t:'▸ Diagnóstico de Sistema', s:'PASS', d:880},
+    {t:'▸ Bem-vindo, <b>Sr. Sabino</b>', s:'READY', d:1100},
+  ];
+  const log = document.getElementById('bootlog');
+  if(log){
+    lines.forEach(l=>{
+      setTimeout(()=>{
+        const div = document.createElement('div');
+        div.className = 'bl';
+        div.innerHTML = l.t + ' <span class="ok">[' + l.s + ']</span>';
+        log.appendChild(div);
+      }, l.d);
+    });
+  }
+  // (intro voice removed — JARVIS now narrates only when opening cards)
+})();
+
+const ZONES=[
+  {key:'sobre',label:'1 · SOBRE MIM',sub:'Gabriel Sabino · GS Consultoria',color:0x2d8dff,pos:[22,18],
+   narr:'JARVIS online. Introducing Gabriel Sabino. Seven years in the Northeast turning data into real profit. He does not deliver pretty dashboards. He delivers the indicator straight into the board\'s hands. It is going to be big.',
+   html:`<div class="sec"><div class="st">E SE SUA OPERACAO FOSSE 3X MAIS RAPIDA?</div><div class="qb">"Ja pensou em ter o Gabriel?"</div><p><strong>7 anos no Nordeste</strong>, atuando em RN, PB, CE e PE. Transformando dados em lucro real.</p><p>Projeto <strong>Transito Inteligente do Recife</strong>: 103% de melhoria no fluxo. Zero obras. Zero reais.</p><div class="qb">"Nao entrego dashboard bonitinho. Entrego o indicador na mao. Vai ser Grande."</div></div><div class="sec"><div class="st">MODELO DE ATUACAO</div><p>Atuo como <strong>PJ</strong>, com mobilidade total. Base em <strong>Ponta Negra (RN), Maracanau (CE), Joao Pessoa (PB) e Jaboatao (PE)</strong>.</p><div class="qb">"Presenca tecnica e resultado rapido. Estou pronto para rodar."</div></div><div class="sec"><div class="st">CONTATO</div><div class="ir"><span><b>WhatsApp</b>(81) 9 8961-1399</span><span><b>LinkedIn</b>Gabriel Sabino - Data Analyst</span><span><b>Regioes</b>RN, PB, CE, PE</span><span><b>Ingles</b>C1 Avancado</span><span><b>Status</b>Disponivel para consultoria</span></div></div><div class="sec"><div class="st">STACK</div><p><span class="tag">Power BI</span><span class="tag">Python</span><span class="tag">SQL</span><span class="tag">Tableau</span><span class="tag">Alteryx</span><span class="tag">ETL</span><span class="tag">Automacao</span></p></div>`},
+  {key:'projetos',label:'2 · PROJETOS',sub:'Cases de Inteligencia de Dados',color:0x66c2ff,pos:[-26,20],
+   narr:'JARVIS reporting projects. Smart Flow Recife: one hundred and three percent traffic improvement, zero construction, pure applied data intelligence. Digital Wall: operational asphyxiation of crime in Cabo de Santo Agostinho through IMEI triangulation and route prediction. JARVIS AI: an assistant that truly understands the business.',
+   html:`<div class="sec"><div class="st">SMART FLOW RECIFE</div><div class="qb">"Engenharia de dados substituindo obras bilionarias."</div><p>Gestao semaforica via dados publicos e APIs de trafego. Zero obras. Recife tinha o pior transito do Brasil.</p><div class="kg"><div class="ki"><div class="kn">+40%</div><div class="kl">Vazao Veicular</div></div><div class="ki"><div class="kn">-30%</div><div class="kl">Tempo de Viagem</div></div><div class="ki"><div class="kn">-60%</div><div class="kl">Paradas</div></div><div class="ki"><div class="kn">R$0</div><div class="kl">Custo de Obras</div></div></div><p><span class="tag">Python</span><span class="tag">Power BI</span><span class="tag">APIs CTTU</span></p></div><div class="sec"><div class="st">MURALHA DIGITAL · CABO DE SANTO AGOSTINHO</div><div class="qb">"Asfixia operacional do crime atraves de dados."</div><p><strong>5a cidade mais violenta do Brasil.</strong> Crime usa rotas de Suape. Solucao: inteligencia e interdicao via dados.</p><div class="ec"><div class="eco">Integracao SDS · Alerta IMEI</div><div class="ed">Celular roubado entra em monitoramento ativo. Triangulacao de sinais em tempo real.</div></div><div class="ec"><div class="eco">Previsao de Rota · Z-Nits</div><div class="ed">Viatura no ponto de fuga <strong>antes do criminoso chegar</strong>. Reducao de 50% no tempo de resposta.</div></div><p><span class="tag">Geoanalytics</span><span class="tag">Python</span><span class="tag">SDS</span><span class="tag">Power BI</span></p></div><div class="sec"><div class="st">JARVIS IA</div><div class="qb">"Nao apenas processa dados - entende o negocio e resolve na hora."</div><p>IA personalizada conectando Financeiro, Engenharia de Producao e Logistica num so lugar.</p><p><span class="tag">IA</span><span class="tag">Python</span><span class="tag">Automacao</span></p></div>`},
+  {key:'exp',label:'3 · EXPERIÊNCIA',sub:'2021 a 2026 · Grandes Empresas',color:0x2d8dff,pos:[28,-22],
+   narr:'JARVIS reporting timeline. Currently, Andrade Gutierrez, RNEST Refinery, where technology eliminates human error. Twenty twenty-three, GMAC Engineering, automation at national level. Twenty twenty-two, Seara JBS, minus one hundred thousand overnight stays through logistics intelligence. Twenty twenty-one, Heineken, all-time unit record: one point three seven percent returns.',
+   html:`<div class="sec"><div class="st">LINHA DO TEMPO</div><div class="ec"><div class="eco">2026 · Andrade Gutierrez <span style="color:#2d8dff;font-weight:900">· ATUAL</span></div><div class="er">Analista de Dados · Qualidade · Refinaria RNEST</div><div class="ed">Ecossistemas onde a <strong>tecnologia elimina o erro</strong> e a operação roda na velocidade máxima.</div></div><div class="ec"><div class="eco">2023 · GMAC Engenharia</div><div class="er">Analista de Dados · Nível Brasil</div><div class="ed">Automatizou processos para <strong>acelerar a operação e reduzir custos</strong> em nível nacional.</div></div><div class="ec"><div class="eco">2022 · Seara (JBS)</div><div class="er">Analista de Logística</div><div class="ed">Cortou <strong>100 mil pernoites</strong> com inteligência logística aplicada a rotas, frete e indicadores em AL, PE, PB e RN.</div></div><div class="ec"><div class="eco">2021 · Heineken</div><div class="er">Analista de Planejamento</div><div class="ed">Bateu o <strong>recorde histórico da unidade</strong>: devoluções reduzidas a <strong>1,37%</strong>. Gerenciou frotas e metas em 30 cidades do Agreste e Sertão nordestino.</div></div></div><div class="sec"><div class="st">CONSULTORIAS ATIVAS</div><div class="ec"><div class="eco">Imperium Contabilidade · RN</div><div class="ed">Dados · Dunas Fleet</div></div><div class="ec"><div class="eco">Corte 84 · Natal/RN</div><div class="ed">Frigorifico · Dados e Indicadores</div></div><div class="ec"><div class="eco">Auto Truck · PE Madalena</div><div class="ed">Estrutura de Dados</div></div><div class="ec"><div class="eco">Mlog · Natal/RN</div><div class="ed">Performance · Logistica e Transportes</div></div></div><div class="sec"><div class="st">FILOSOFIA</div><div class="qb">"Nao substituir pessoas - decolar o processo das pessoas com a tecnologia."</div></div>`},
+  {key:'skills',label:'4 · HABILIDADES',sub:'Dados · Estatistica · Estrategia',color:0x66c2ff,pos:[-28,-20],
+   narr:'JARVIS, capabilities identified. Three pillars. Power BI and Tableau, turning complex indicators into clear decisions for the board. Applied statistics, predicting failures and optimizing costs. And Python with Selenium and PyAutoGUI, accelerating processes up to ten times. English C1 certified by EF SET.',
+   html:`<div class="sec"><div class="st">PILARES TECNICOS</div><div class="ec"><div class="eco">Business Intelligence · Power BI e Tableau</div><div class="ed">Dashboards que transformam indicadores complexos em <strong>decisoes claras para a diretoria</strong> em segundos.</div></div><div class="ec"><div class="eco">Estatistica Aplicada a Negocios</div><div class="ed">Modelos matematicos para <strong>prever falhas</strong>, reduzir custos e otimizar eficiencia logistica.</div></div><div class="ec"><div class="eco">Automacao Inteligente com Python</div><div class="ed">Selenium e PyAutoGUI eliminando tarefas manuais. <strong>Processos ate 10x mais rapidos.</strong></div></div></div><div class="sec"><div class="st">INDICADORES DE PROFICIENCIA</div>${[['Power BI',95],['Python',95],['SQL',88],['Alteryx',82],['Tableau',78],['Automacao',85],['Logistica',90],['Planejamento',92]].map(([n,v])=>'<div class="sk"><div class="skr"><span>'+n+'</span><span>'+v+'%</span></div><div class="skt"><div class="skf" style="width:'+v+'%"></div></div></div>').join('')}</div><div class="sec"><div class="st">STACK TECNICA</div><p><span class="tag">Power BI</span><span class="tag">Tableau</span><span class="tag">Python</span><span class="tag">SQL</span><span class="tag">Alteryx</span><span class="tag">Selenium</span><span class="tag">PyAutoGUI</span><span class="tag">ETL</span></p></div><div class="sec"><div class="st">IDIOMAS</div><p><span class="tag">Portugues Nativo</span><span class="tag">English C1 Advanced · EF SET</span></p></div>`},
+  {key:'formacao',label:'5 · FORMACAO',sub:'Graduacao · Certificacoes · Base Tecnica',color:0x2d8dff,pos:[0,34],
+   narr:'JARVIS processing education. Technical degree in Logistics and Industrial Automation, the solid foundation of seven years. Google Data Analytics Professional certified. Alteryx Advanced in complex ETL automation. English C1 by EF SET. Production Engineering and Financial Management in progress. Continuous learning to deliver more than numbers: direction.',
+   html:`<div class="sec"><div class="st">BASE TECNICA</div><div class="ec"><div class="eco">Tecnico em Logistica e Automacao Industrial</div><div class="ed">A base que une <strong>7 anos de experiencia pratica</strong> com <strong>inteligencia de processos industriais</strong>. O alicerce de tudo.</div></div></div><div class="sec"><div class="st">GRADUACAO EM ANDAMENTO</div><div class="ec"><div class="eco">Engenharia de Producao</div><div class="er">Cursando</div><div class="ed">Unindo gestao de processos com visao estrategica de dados e operacoes.</div></div><div class="ec"><div class="eco">Gestao Financeira</div><div class="er">Cursando</div><div class="ed">Complementando a visao analitica com inteligencia financeira e de custos.</div></div></div><div class="sec"><div class="st">CERTIFICACOES INTERNACIONAIS</div><div class="ec"><div class="eco">Google Data Analytics Professional</div><div class="er">Google · Certificado Oficial</div><div class="ed">Especialista em transformar <strong>grandes volumes de dados brutos</strong> em decisoes estrategicas de negocio.</div></div><div class="ec"><div class="eco">Alteryx Advanced Certification</div><div class="er">Alteryx · Certificado Avancado</div><div class="ed">Dominio em <strong>automacao de fluxos ETL complexos</strong> para maxima velocidade operacional.</div></div><div class="ec"><div class="eco">English C1 Advanced · EF SET</div><div class="er">Certificado Internacional</div><div class="ed">Proficiencia total para <strong>projetos globais</strong> e lideranca em ambientes multinacionais.</div></div></div>`},
+  {key:'visao',label:'6 · VISAO GS',sub:'Expansao Nacional · 26 Estados',color:0x66c2ff,pos:[0,-34],
+   narr:'JARVIS, GS Consulting mission confirmed. Expand to all twenty-six Brazilian states with high-level automation and strategic consulting. Be the specialist companies look for when costs are high and processes are slow. High cost? Statistical diagnosis. Slow process? Automation. Stuck decision? The indicator straight into the board\'s hands. More than numbers: direction. It is going to be big.',
+   html:`<div class="sec"><div class="st">MISSAO GS CONSULTORIA</div><p>Expandir para <strong>todos os 26 estados do Brasil</strong>, levando automacao de alto nivel e consultoria estrategica para transformar grandes operacoes.</p><div class="qb">"Ser o especialista que as empresas procuram quando o custo esta alto e o processo esta lento."</div></div><div class="sec"><div class="st">PROPOSTA DE VALOR</div><div class="ec"><div class="eco">Custo Operacional Alto?</div><div class="ed">Diagnostico estatistico para <strong>identificar onde o dinheiro vaza</strong> e cortar na raiz com precisao cirurgica.</div></div><div class="ec"><div class="eco">Processo Lento ou Manual?</div><div class="ed">Automacao de alto nivel para <strong>acelerar a operacao</strong> e eliminar retrabalho humano.</div></div><div class="ec"><div class="eco">Decisao Travada por Falta de Dados?</div><div class="ed">Consultoria estrategica entregando <strong>o indicador certo na mao da diretoria</strong>.</div></div></div><div class="sec"><div class="st">ALCANCE ATUAL</div><p><span class="tag">PE</span><span class="tag">RN</span><span class="tag">PB</span><span class="tag">CE</span><span class="tag">AL</span> <strong>Meta: 26 estados + DF</strong></p></div><div class="sec"><div class="st">FILOSOFIA</div><div class="qb">"Mais que numeros - forneco direcao."</div><div class="qb">"Vai ser Grande."</div></div>`}
+];
+
+// THREE.JS
+const W=window.innerWidth,H=window.innerHeight;
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setSize(W,H);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x05080f);scene.fog=new THREE.Fog(0x05080f,90,200);
+const camera=new THREE.PerspectiveCamera(62,W/H,.1,500);camera.position.set(0,14,20);
+const camLook=new THREE.Vector3();
+
+// LIGHTS
+scene.add(new THREE.AmbientLight(0x4060a8,1.2));
+scene.add(new THREE.HemisphereLight(0x6090ff,0x0a0a1a,.85));
+const moon=new THREE.DirectionalLight(0xb8d0ff,1.4);moon.position.set(40,80,30);moon.castShadow=true;
+moon.shadow.mapSize.set(1024,1024);Object.assign(moon.shadow.camera,{left:-70,right:70,top:70,bottom:-70});scene.add(moon);
+const acc1=new THREE.PointLight(0x2d8dff,1.4,110);acc1.position.set(0,22,0);scene.add(acc1);
+const acc2=new THREE.PointLight(0x66c2ff,1.0,90);acc2.position.set(-30,18,-30);scene.add(acc2);
+
+// Stars
+const sv=[];for(let i=0;i<2000;i++)sv.push((Math.random()-.5)*400,Math.random()*120+20,(Math.random()-.5)*400);
+const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(sv,3));
+scene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:.09,transparent:true,opacity:.8})));
+
+// GROUND
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(160,160),new THREE.MeshStandardMaterial({color:0x0a0e1c,roughness:.85,metalness:.15}));
+gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);
+const grid=new THREE.GridHelper(160,40,0x2d8dff,0x0e1424);grid.material.transparent=true;grid.material.opacity=.22;scene.add(grid);
+
+// ROADS
+const roadMat=new THREE.MeshStandardMaterial({color:0x14141e,roughness:.95});
+[[130,8],[8,130]].forEach(([w,d])=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.y=.02;scene.add(m);});
+const dashMat=new THREE.MeshBasicMaterial({color:0x66c2ff});
+for(let i=-60;i<=60;i+=6){
+  const d1=new THREE.Mesh(new THREE.PlaneGeometry(2,.25),dashMat);d1.rotation.x=-Math.PI/2;d1.position.set(i,.03,0);scene.add(d1);
+  const d2=new THREE.Mesh(new THREE.PlaneGeometry(.25,2),dashMat);d2.rotation.x=-Math.PI/2;d2.position.set(0,.03,i);scene.add(d2);
+}
+
+// BUILDINGS
+const obstacles=[];
+const bPal=[0x0a0f24,0x121838,0x1a2050,0x0e1830,0x162048];
+for(let i=0;i<28;i++){
+  const ang=(i/28)*Math.PI*2,r=18+Math.random()*28;
+  const bx=Math.cos(ang)*r,bz=Math.sin(ang)*r;
+  if(Math.abs(bx)<7||Math.abs(bz)<7)continue;
+  const bw=4+Math.random()*5,bd=4+Math.random()*5,bh=6+Math.random()*18;
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),new THREE.MeshStandardMaterial({color:bPal[i%5],roughness:.7,metalness:.3}));
+  body.position.y=bh/2;body.castShadow=true;g.add(body);
+  const wM=new THREE.MeshBasicMaterial({color:Math.random()>.4?0x66c2ff:0xb8d8ff});
+  const cols=Math.floor(bw/1.2),rows=Math.floor(bh/1.5);
+  for(let c=0;c<cols;c++)for(let rv=0;rv<rows;rv++){
+    if(Math.random()>.4)continue;
+    const wm=new THREE.Mesh(new THREE.PlaneGeometry(.4,.5),wM.clone());
+    wm.position.set(-bw/2+.6+c*1.2,1+rv*1.5,bd/2+.01);g.add(wm);
+  }
+  g.position.set(bx,0,bz);g.rotation.y=Math.random()*Math.PI;scene.add(g);
+  obstacles.push({pos:new THREE.Vector3(bx,0,bz),r:Math.max(bw,bd)/2+.5});
+}
+
+// TREES
+for(let i=0;i<20;i++){
+  const ang=Math.random()*Math.PI*2,r=10+Math.random()*50;
+  const tx=Math.cos(ang)*r,tz=Math.sin(ang)*r;
+  if(Math.abs(tx)<5.5||Math.abs(tz)<5.5)continue;
+  if(obstacles.some(o=>Math.hypot(tx-o.pos.x,tz-o.pos.z)<o.r+1.5))continue;
+  const trk=new THREE.Mesh(new THREE.CylinderGeometry(.18,.22,1.2,6),new THREE.MeshStandardMaterial({color:0x3a2515}));trk.position.set(tx,.6,tz);
+  const lvs=new THREE.Mesh(new THREE.ConeGeometry(.9,2.2,7),new THREE.MeshStandardMaterial({color:0x1a4030}));lvs.position.set(tx,2.1,tz);
+  scene.add(trk);scene.add(lvs);
+  obstacles.push({pos:new THREE.Vector3(tx,0,tz),r:.9});
+}
+
+// TRAFFIC LIGHTS
+const tLights=[];
+[[6,6],[-6,6],[6,-6],[-6,-6]].forEach(([cx,cz],i)=>{
+  const g=new THREE.Group();
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,4.5,8),new THREE.MeshStandardMaterial({color:0x222233,metalness:.7}));pole.position.y=2.25;g.add(pole);
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.55,1.5,.55),new THREE.MeshStandardMaterial({color:0x111122,metalness:.6}));head.position.y=4.2;g.add(head);
+  const bulbs=[];[0xff3344,0xffcc22,0x33dd66].forEach((c,idx)=>{
+    const b=new THREE.Mesh(new THREE.SphereGeometry(.18,12,12),new THREE.MeshBasicMaterial({color:0x222233}));b.position.set(0,4.7-idx*.45,.3);g.add(b);bulbs.push(b);
+  });
+  g.position.set(cx,0,cz);g.rotation.y=Math.atan2(-cx,-cz);scene.add(g);
+  tLights.push({bulbs,state:i%3,timer:i*1.2});
+});
+
+// PEDESTRIANS (12)
+const peds=[];
+for(let i=0;i<5;i++){
+  const px=(Math.random()-.5)*80,pz=(Math.random()-.5)*80;
+  if(Math.abs(px)<9||Math.abs(pz)<9)continue;
+  const m=new THREE.Group();
+  const sh=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(Math.random(),.6,.5)});
+  const sk=new THREE.MeshStandardMaterial({color:0xf0c090});
+  const pt=new THREE.MeshStandardMaterial({color:0x2a2a3a});
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),sk);head.position.y=1.55;m.add(head);
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.4,.7,.25),sh);torso.position.y=1.05;m.add(torso);
+  const aL=new THREE.Mesh(new THREE.BoxGeometry(.12,.6,.12),sh);aL.position.set(-.28,1.05,0);m.add(aL);
+  const aR=aL.clone();aR.position.x=.28;m.add(aR);
+  const lL=new THREE.Mesh(new THREE.BoxGeometry(.14,.7,.14),pt);lL.position.set(-.1,.4,0);m.add(lL);
+  const lR=lL.clone();lR.position.x=.1;m.add(lR);
+  m.position.set(px,0,pz);scene.add(m);
+  peds.push({mesh:m,cx:px,cz:pz,pr:2+Math.random()*3,angle:Math.random()*Math.PI*2,spd:.3+Math.random()*.4,phase:0,aL,aR,lL,lR,knocked:false,knockTime:0,vel:new THREE.Vector3()});
+}
+
+// NPC CARS (8)
+const npcCols=[0x1a3a8a,0xc04020,0x1f6a3a,0xd8d8d8,0x2a2a32,0x6a2a8a,0xc89020,0x208090];
+const npcLanes=[-22,-8,8,22];const npcCars=[];
+for(let i=0;i<8;i++){
+  const g=new THREE.Group();const col=npcCols[i];
+  const bM=new THREE.MeshStandardMaterial({color:col,metalness:.92,roughness:.12});
+  const ch=new THREE.Mesh(new THREE.BoxGeometry(1.85,.5,4.0),bM);ch.position.y=.48;ch.castShadow=true;g.add(ch);
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(1.65,.62,2.4),new THREE.MeshStandardMaterial({color:0x05060a,metalness:.6}));cab.position.set(0,1.18,-.15);g.add(cab);
+  const hs=new THREE.Mesh(new THREE.BoxGeometry(1.55,.06,.05),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xeaf4ff,emissiveIntensity:5}));hs.position.set(0,.72,1.99);g.add(hs);
+  const ts=new THREE.Mesh(new THREE.BoxGeometry(1.55,.07,.04),new THREE.MeshStandardMaterial({color:0xff2200,emissive:0xff0a00,emissiveIntensity:3.2}));ts.position.set(0,.78,-2.02);g.add(ts);
+  const nws=[];
+  [[.95,1.35],[-.95,1.35],[.95,-1.35],[-.95,-1.35]].forEach(([wx,wz])=>{
+    const wg=new THREE.Group();
+    const t=new THREE.Mesh(new THREE.TorusGeometry(.36,.16,8,16),new THREE.MeshStandardMaterial({color:0x080808}));t.rotation.y=Math.PI/2;wg.add(t);
+    const r=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.2,10),new THREE.MeshStandardMaterial({color:0xc0c0c0,metalness:.9}));r.rotation.z=Math.PI/2;wg.add(r);
+    wg.position.set(wx,.36,wz);g.add(wg);nws.push(wg);
+  });
+  const axis=i%2===0?'x':'z',lane=npcLanes[i%4];
+  const pos=(Math.random()-.5)*120,spd=(5+Math.random()*5)*(Math.random()>.5?1:-1);
+  scene.add(g);npcCars.push({mesh:g,axis,lane,pos,spd,wheels:nws});
+}
+
+// BILLBOARDS (4 corner ones only - perf)
+function mkCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+const bigBoards=[];
+function drawBoard(b){
+  const ctx=b.ctx,W=ctx.canvas.width,H=ctx.canvas.height,m=b.messages[b.idx];
+  const grd=ctx.createLinearGradient(0,0,W,H);grd.addColorStop(0,'#02061a');grd.addColorStop(1,'#080418');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(45,141,255,0.08)';
+  for(let y=6;y<H;y+=11)for(let x=6;x<W;x+=11){ctx.beginPath();ctx.arc(x,y,1.6,0,Math.PI*2);ctx.fill();}
+  const pulse=.5+Math.sin(b.pulse)*.5;
+  ctx.shadowColor=m.accent;ctx.shadowBlur=30+pulse*40;ctx.fillStyle='#ffffff';
+  ctx.font='bold '+Math.floor(H*.32)+'px Nunito,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(m.title,W/2,H*.42);ctx.shadowBlur=0;
+  ctx.font='600 '+Math.floor(H*.12)+'px Nunito,Arial,sans-serif';ctx.fillStyle=m.accent;ctx.fillText(m.sub,W/2,H*.74);
+  ctx.fillStyle=m.accent;ctx.fillRect(0,H-12,W*pulse,6);b.tex.needsUpdate=true;
+}
+function makeBigBoard(pos,rotY,size,messages){
+  const cv=mkCanvas(1024,384);const ctx=cv.getContext('2d');const tex=new THREE.CanvasTexture(cv);
+  const b={ctx,tex,messages,idx:0,timer:0,pulse:Math.random()*6};drawBoard(b);bigBoards.push(b);
+  const grp=new THREE.Group();
+  const back=new THREE.Mesh(new THREE.BoxGeometry(size[0]+.8,size[1]+.8,.6),new THREE.MeshStandardMaterial({color:0x05060f,metalness:.7}));back.position.y=size[1]/2+6;grp.add(back);
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(size[0],size[1]),new THREE.MeshBasicMaterial({map:tex}));scr.position.set(0,size[1]/2+6,.32);grp.add(scr);
+  const scr2=scr.clone();scr2.position.z=-.32;scr2.rotation.y=Math.PI;grp.add(scr2);
+  [-size[0]/2+.5,size[0]/2-.5].forEach(sx=>{const pole=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,6.5,8),new THREE.MeshStandardMaterial({color:0x0a0e1c,metalness:.7}));pole.position.set(sx,3.2,0);grp.add(pole);});
+  const aHex=parseInt(messages[0].accent.replace('#',''),16);
+  const lt=new THREE.PointLight(aHex,2.2,30);lt.position.set(0,size[1]/2+6,2);grp.add(lt);
+  grp.position.set(pos[0],pos[1],pos[2]);grp.rotation.y=rotY;scene.add(grp);
+  obstacles.push({pos:new THREE.Vector3(pos[0],0,pos[2]),r:size[0]/2+.6});
+}
+makeBigBoard([-42,0,42],Math.PI/4,[14,7],[{title:'GABRIEL SABINO',sub:'DATA ANALYST · NORDESTE',accent:'#2d8dff'},{title:'VAI SER GRANDE',sub:'GS CONSULTORIA',accent:'#66c2ff'},{title:'+103% FLUXO',sub:'TRANSITO INTELIGENTE RECIFE',accent:'#2d8dff'}]);
+makeBigBoard([42,0,42],-Math.PI/4,[14,7],[{title:'GS',sub:'INTELIGENCIA DE DADOS',accent:'#66c2ff'},{title:'+100 MIL',sub:'PERNOITES GERADOS',accent:'#2d8dff'},{title:'POWER BI · PYTHON',sub:'ALTERYX · TABLEAU',accent:'#66c2ff'}]);
+makeBigBoard([-42,0,-42],Math.PI-Math.PI/4,[14,7],[{title:'MURALHA DIGITAL',sub:'CABO DE SANTO AGOSTINHO',accent:'#2d8dff'},{title:'7 ANOS',sub:'NORDESTE · RN PB CE PE',accent:'#66c2ff'},{title:'C1 ADVANCED',sub:'INGLES · EF SET',accent:'#2d8dff'}]);
+makeBigBoard([42,0,-42],Math.PI+Math.PI/4,[14,7],[{title:'(81) 9 8961-1399',sub:'WHATSAPP · CONSULTORIA PJ',accent:'#66c2ff'},{title:'ESTATISTICA APLICADA',sub:'DECISAO · DIRECAO · LUCRO',accent:'#2d8dff'},{title:'26 ESTADOS',sub:'EXPANSAO NACIONAL · BRASIL',accent:'#66c2ff'}]);
+
+// ARCH
+(function(){
+  const arc=new THREE.Group();
+  [-9,9].forEach(sx=>{
+    const t=new THREE.Mesh(new THREE.BoxGeometry(2.2,18,2.2),new THREE.MeshStandardMaterial({color:0x0a0e1c,metalness:.8}));t.position.set(sx,9,0);arc.add(t);
+    const led=new THREE.Mesh(new THREE.BoxGeometry(.18,17,.18),new THREE.MeshStandardMaterial({color:0x66c2ff,emissive:0x2d8dff,emissiveIntensity:4}));led.position.set(sx+(sx>0?-1.15:1.15),9,1.15);arc.add(led);
+  });
+  const beam=new THREE.Mesh(new THREE.BoxGeometry(20,2.5,2.2),new THREE.MeshStandardMaterial({color:0x05060f,metalness:.85}));beam.position.y=19.2;arc.add(beam);
+  const cv=mkCanvas(2048,256);const ctx=cv.getContext('2d');
+  ctx.fillStyle='#020410';ctx.fillRect(0,0,2048,256);
+  ctx.shadowColor='#2d8dff';ctx.shadowBlur=50;ctx.font='bold 160px Nunito,Arial,sans-serif';ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('GABRIEL SABINO  ·  GS CONSULTORIA',1024,128);
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(19.5,2.2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)}));scr.position.set(0,19.2,1.13);arc.add(scr);
+  const scr2=scr.clone();scr2.position.z=-1.13;scr2.rotation.y=Math.PI;arc.add(scr2);
+  [-8,-3,3,8].forEach(sx=>{const lt=new THREE.PointLight(0x66c2ff,1.4,22);lt.position.set(sx,18,2.5);arc.add(lt);});
+  arc.position.set(0,0,28);scene.add(arc);
+  obstacles.push({pos:new THREE.Vector3(-9,0,28),r:1.8});obstacles.push({pos:new THREE.Vector3(9,0,28),r:1.8});
+})();
+
+// GS HERO BILLBOARD
+(function(){
+  const gsG=new THREE.Group();
+  const bb=new THREE.Mesh(new THREE.BoxGeometry(28,14,1.2),new THREE.MeshStandardMaterial({color:0x05060f,metalness:.7}));bb.position.y=14;gsG.add(bb);
+  const cv=mkCanvas(1024,512);const ctx=cv.getContext('2d');
+  ctx.fillStyle='#020410';ctx.fillRect(0,0,1024,512);
+  ctx.fillStyle='rgba(45,141,255,0.10)';for(let y=8;y<512;y+=14)for(let x=8;x<1024;x+=14){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}
+  ctx.font='bold 380px Nunito,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#2d8dff';ctx.shadowBlur=60;ctx.fillStyle='#ffffff';ctx.fillText('GS',512,210);ctx.shadowBlur=0;
+  ctx.font='bold 70px Nunito,Arial,sans-serif';ctx.fillStyle='#66c2ff';ctx.fillText('CONSULTORIA',512,390);
+  ctx.font='600 38px Nunito,Arial,sans-serif';ctx.fillStyle='#ffffff';ctx.fillText('INTELIGENCIA DE DADOS',512,460);
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(26,12.5),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)}));scr.position.set(0,14,.65);gsG.add(scr);
+  [-12,12].forEach(sx=>{const pole=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,22,8),new THREE.MeshStandardMaterial({color:0x0a0e1c,metalness:.7}));pole.position.set(sx,11,0);gsG.add(pole);});
+  const bl=new THREE.PointLight(0x2d8dff,2.5,40);bl.position.set(0,18,.8);gsG.add(bl);
+  const bl2=new THREE.PointLight(0x66c2ff,1.6,28);bl2.position.set(-10,14,4);gsG.add(bl2);
+  const bl3=bl2.clone();bl3.position.set(10,14,4);gsG.add(bl3);
+  gsG.position.set(0,0,64);scene.add(gsG);obstacles.push({pos:new THREE.Vector3(0,0,64),r:15});
+})();
+
+// MARKERS + trail
+const markers=[];
+ZONES.forEach(z=>{
+  const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(2.0,2.6,.25,28),new THREE.MeshBasicMaterial({color:z.color,transparent:true,opacity:.7}));base.position.y=.06;g.add(base);
+  const pillar=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,7.5,16),new THREE.MeshBasicMaterial({color:z.color,transparent:true,opacity:.9}));pillar.position.y=3.75;g.add(pillar);
+  // Sky beam (visible from far)
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.9,.25,40,16,1,true),new THREE.MeshBasicMaterial({color:z.color,transparent:true,opacity:.18,side:THREE.DoubleSide,depthWrite:false}));beam.position.y=20;g.add(beam);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.6,.09,8,40),new THREE.MeshBasicMaterial({color:z.color}));ring.rotation.x=-Math.PI/2;ring.position.y=.12;g.add(ring);
+  const ring2=new THREE.Mesh(new THREE.TorusGeometry(3.4,.05,8,40),new THREE.MeshBasicMaterial({color:z.color,transparent:true,opacity:.5}));ring2.rotation.x=-Math.PI/2;ring2.position.y=.08;g.add(ring2);
+  const pl=new THREE.PointLight(z.color,2.4,26);pl.position.y=5;g.add(pl);
+  const cv=mkCanvas(512,96);const ctx=cv.getContext('2d');
+  ctx.fillStyle='rgba(2,4,18,.94)';ctx.beginPath();ctx.roundRect(5,5,502,86,18);ctx.fill();
+  ctx.strokeStyle='#'+(z.color).toString(16).padStart(6,'0');ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(5,5,502,86,18);ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='bold 32px Nunito,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(z.label,256,50);
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false}));
+  spr.scale.set(11,2.05,1);spr.position.y=10.5;spr.renderOrder=2;g.add(spr);
+  g.position.set(z.pos[0],0,z.pos[1]);scene.add(g);
+  markers.push({key:z.key,pos:g.position.clone(),group:g,pillar,beam});
+});
+for(let i=0;i<ZONES.length;i++){
+  const a=ZONES[i],b=ZONES[(i+1)%ZONES.length];
+  for(let s=1;s<7;s++){
+    const t=s/7,x=a.pos[0]+(b.pos[0]-a.pos[0])*t,z=a.pos[1]+(b.pos[1]-a.pos[1])*t;
+    const dot=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.06,8),new THREE.MeshStandardMaterial({color:a.color,emissive:a.color,emissiveIntensity:.5,transparent:true,opacity:.5}));
+    dot.position.set(x,.04,z);scene.add(dot);
+  }
+}
+// GS on ground
+(function(){
+  ['G','S'].forEach((ch,i)=>{
+    const cv=mkCanvas(256,256);const ctx=cv.getContext('2d');ctx.clearRect(0,0,256,256);
+    ctx.fillStyle='#ffffff';ctx.shadowColor='#2d8dff';ctx.shadowBlur=25;
+    ctx.font='bold 210px Nunito,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ch,128,128);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(3.5,3.5),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));
+    m.rotation.x=-Math.PI/2;m.position.set(-1.9+i*3.8,.05,0);scene.add(m);
+    const pl=new THREE.PointLight(0x2d8dff,.7,7);pl.position.set(-1.9+i*3.8,.3,0);scene.add(pl);
+  });
+})();
+
+// CAR (Tesla blue)
+const car=new THREE.Group();
+const cBM=new THREE.MeshStandardMaterial({color:0x0a4dff,metalness:.95,roughness:.08});
+const carBody=new THREE.Mesh(new THREE.BoxGeometry(2.05,.55,4.3),cBM);carBody.position.y=.55;carBody.castShadow=true;car.add(carBody);
+const carHood=new THREE.Mesh(new THREE.BoxGeometry(1.95,.22,1.15),cBM);carHood.position.set(0,.92,1.45);carHood.rotation.x=-.05;car.add(carHood);
+const carTrunk=new THREE.Mesh(new THREE.BoxGeometry(1.95,.22,.95),cBM);carTrunk.position.set(0,.92,-1.55);carTrunk.rotation.x=.04;car.add(carTrunk);
+const stripe=new THREE.Mesh(new THREE.BoxGeometry(2.1,.18,4.32),new THREE.MeshStandardMaterial({color:0x05060a,metalness:.95}));stripe.position.y=.28;car.add(stripe);
+const carCabin=new THREE.Mesh(new THREE.BoxGeometry(1.78,.7,2.5),new THREE.MeshStandardMaterial({color:0x06091a,metalness:.7,roughness:.15}));carCabin.position.set(0,1.28,-.18);carCabin.castShadow=true;car.add(carCabin);
+const roofG=new THREE.Mesh(new THREE.BoxGeometry(1.65,.05,2.4),new THREE.MeshStandardMaterial({color:0x0a1224,metalness:.9,transparent:true,opacity:.92}));roofG.position.set(0,1.66,-.18);car.add(roofG);
+const gM=new THREE.MeshStandardMaterial({color:0x6090c0,transparent:true,opacity:.55,metalness:.4});
+const fW=new THREE.Mesh(new THREE.PlaneGeometry(1.65,.78),gM);fW.position.set(0,1.28,1.05);fW.rotation.x=-.6;car.add(fW);
+const rW=fW.clone();rW.position.set(0,1.28,-1.4);rW.rotation.x=.55;rW.rotation.y=Math.PI;car.add(rW);
+const headLed=new THREE.Mesh(new THREE.BoxGeometry(1.7,.07,.05),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xc8e4ff,emissiveIntensity:6}));headLed.position.set(0,.78,2.18);car.add(headLed);
+[[.78,.66,2.18],[-.78,.66,2.18]].forEach(([x,y,z])=>{
+  const hl=new THREE.Mesh(new THREE.BoxGeometry(.35,.08,.06),new THREE.MeshStandardMaterial({color:0xeaf4ff,emissive:0xc0e0ff,emissiveIntensity:4.5}));hl.position.set(x,y,z);car.add(hl);
+  const pl=new THREE.PointLight(0xc0e0ff,2.2,16);pl.position.set(x,y,z+.7);car.add(pl);
+});
+const tailStrip=new THREE.Mesh(new THREE.BoxGeometry(1.7,.08,.05),new THREE.MeshStandardMaterial({color:0x66c2ff,emissive:0x2d8dff,emissiveIntensity:4}));tailStrip.position.set(0,.74,-2.18);car.add(tailStrip);
+function mkWh(x,z){const g=new THREE.Group();const t=new THREE.Mesh(new THREE.TorusGeometry(.46,.22,10,24),new THREE.MeshStandardMaterial({color:0x080808,roughness:.95}));t.rotation.y=Math.PI/2;g.add(t);const r=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,.28,12),new THREE.MeshStandardMaterial({color:0xe8e8e8,metalness:.95,roughness:.06}));r.rotation.z=Math.PI/2;g.add(r);g.position.set(x,.48,z);car.add(g);return g;}
+const wheels=[mkWh(1.18,1.5),mkWh(-1.18,1.5),mkWh(1.18,-1.5),mkWh(-1.18,-1.5)];
+scene.add(car);
+const carShad=new THREE.Mesh(new THREE.CircleGeometry(2.1,20),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.35}));carShad.rotation.x=-Math.PI/2;carShad.position.y=.01;scene.add(carShad);
+
+// STATE
+let mode='car',started=false,panelOpen=false,nearMarker=null,currentPanelKey=null;
+const keys={};const carPos=new THREE.Vector3(0,0,0);let carAngle=0,carSpeed=0,steer=0,wrot=0;
+let aerialView=false,narrTimer=null;
+
+// JARVIS VOICE (Web Speech API com voz robotizada)
+let jarvisOn = true;
+let jarvisVoice = null;
+function pickJarvisVoice(){
+  const voices = speechSynthesis.getVoices();
+  // Prefer English male voice (JARVIS style — "Ladies and Gentlemen")
+  jarvisVoice = voices.find(v=>/en[-_]GB/i.test(v.lang) && /male|daniel|google.*uk/i.test(v.name))
+             || voices.find(v=>/en[-_]US/i.test(v.lang) && /male|david|mark|google.*us/i.test(v.name))
+             || voices.find(v=>/en[-_](GB|US|AU)/i.test(v.lang))
+             || voices.find(v=>/en/i.test(v.lang))
+             || voices[0] || null;
+}
+if('speechSynthesis' in window){
+  pickJarvisVoice();
+  speechSynthesis.onvoiceschanged = pickJarvisVoice;
+}
+function jarvisSpeak(text){
+  if(!jarvisOn || !('speechSynthesis' in window) || !text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if(jarvisVoice) u.voice = jarvisVoice;
+  u.lang = (jarvisVoice && jarvisVoice.lang) || 'en-GB';
+  u.rate = 0.98;
+  u.pitch = 0.5;    // deep robotic JARVIS
+  u.volume = 0.95;
+  const btn = document.getElementById('jvbtn');
+  u.onstart = ()=>btn && btn.classList.add('speaking');
+  u.onend   = ()=>btn && btn.classList.remove('speaking');
+  u.onerror = ()=>btn && btn.classList.remove('speaking');
+  speechSynthesis.speak(u);
+}
+function jarvisStop(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
+function toggleJarvis(){
+  jarvisOn = !jarvisOn;
+  const btn = document.getElementById('jvbtn');
+  const ico = document.getElementById('jvico');
+  if(jarvisOn){ btn.classList.remove('off'); ico.textContent='🔊'; }
+  else { btn.classList.add('off'); ico.textContent='🔇'; jarvisStop(); }
+}
+
+// PANEL
+function openPanel(key){
+  const z=ZONES.find(z=>z.key===key);if(!z)return;
+  currentPanelKey=key;
+  document.getElementById('ptitle').textContent=z.label;
+  document.getElementById('psub').textContent=z.sub;
+  document.getElementById('pb').innerHTML=z.html;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('po').classList.add('show');
+  document.getElementById('interact').classList.remove('show');
+  panelOpen=true;
+  jarvisSpeak(z.narr);
+}
+function closePanel(){
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('po').classList.remove('show');
+  panelOpen=false;currentPanelKey=null;
+  jarvisStop();
+}
+function openNearMarker(){if(nearMarker&&!panelOpen)openPanel(nearMarker.key);}
+function startGame(){
+  const el=document.getElementById('intro');el.classList.add('out');
+  setTimeout(()=>{el.style.display='none';started=true;},1100);
+}
+function toggleMode(){
+  mode=mode==='car'?'ironman':'car';
+  car.visible=mode==='car';carShad.visible=mode==='car';
+  document.getElementById('imhud').style.display=mode==='ironman'?'block':'none';
+  document.getElementById('speedo').style.display=mode==='ironman'?'none':'block';
+  const btn=document.getElementById('modebtn');
+  btn.textContent=mode==='car'?'Iron Man':'Carro';
+  btn.className=mode==='ironman'?'im':'';
+}
+
+// INPUT
+function nk(e){if(e.key==='ArrowUp')return'up';if(e.key==='ArrowDown')return'down';if(e.key==='ArrowLeft')return'left';if(e.key==='ArrowRight')return'right';if(e.key==='Shift')return'shift';return (e.key||'').toLowerCase();}
+window.addEventListener('keydown',e=>{
+  const k=nk(e);keys[k]=true;
+  if(k==='escape'){if(panelOpen){closePanel();e.preventDefault();}return;}
+  if(panelOpen)return;
+  if(k==='e'&&nearMarker){openPanel(nearMarker.key);e.preventDefault();}
+  if(k==='v')aerialView=!aerialView;
+  if(['up','down','left','right'].includes(k))e.preventDefault();
+});
+window.addEventListener('keyup',e=>keys[nk(e)]=false);
+// Click outside panel closes
+document.getElementById('po').addEventListener('click',closePanel);
+
+// PROXIMITY
+const hintEl=document.getElementById('hint');
+const interactEl=document.getElementById('interact');
+function checkProx(){
+  let nd=Infinity;nearMarker=null;
+  markers.forEach(m=>{const d=carPos.distanceTo(m.pos);if(d<nd){nd=d;nearMarker=m;}});
+  if(nearMarker&&nd<7&&!panelOpen){
+    const z=ZONES.find(z=>z.key===nearMarker.key);
+    hintEl.textContent=z.label;hintEl.classList.add('show');
+    interactEl.classList.add('show');
+  } else if(nearMarker&&nd<11&&!panelOpen){
+    const z=ZONES.find(z=>z.key===nearMarker.key);
+    hintEl.textContent=z.label;hintEl.classList.add('show');
+    interactEl.classList.remove('show');
+  } else {
+    hintEl.classList.remove('show');
+    interactEl.classList.remove('show');
+  }
+  if(mode==='ironman'){
+    const imH=7+Math.abs(carSpeed)*.15;
+    const altEl=document.getElementById('imalt');if(altEl)altEl.textContent='ALT: '+Math.round(imH)+'m';
+    const sEl=document.getElementById('imspd');if(sEl)sEl.textContent='VEL: '+Math.abs(Math.round(carSpeed*8))+' km/h';
+    if(nearMarker){const z=ZONES.find(z=>z.key===nearMarker.key);const tEl=document.getElementById('imtgt');if(tEl&&z)tEl.textContent='ALVO: '+z.label;}
+  }
+}
+
+// PARTICLES
+const parts=[];
+function spawnPart(){if(Math.abs(carSpeed)<3)return;const p=new THREE.Mesh(new THREE.SphereGeometry(.07,4,4),new THREE.MeshBasicMaterial({color:0xaaaaaa,transparent:true}));p.position.set(carPos.x+Math.sin(carAngle)*-1.6+(Math.random()-.5)*.4,.25,carPos.z+Math.cos(carAngle)*-1.6+(Math.random()-.5)*.4);p.userData={v:new THREE.Vector3((Math.random()-.5)*.05,.04,(Math.random()-.5)*.05),l:1};scene.add(p);parts.push(p);}
+function updParts(dt){for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.userData.l-=dt*2.5;p.position.addScaledVector(p.userData.v,1);p.material.opacity=p.userData.l*.45;if(p.userData.l<=0){scene.remove(p);parts.splice(i,1);}}}
+
+// MINIMAP
+const mmc=document.getElementById('mm');mmc.width=140;mmc.height=140;const mc=mmc.getContext('2d');
+function drawMap(){
+  mc.clearRect(0,0,140,140);mc.fillStyle='rgba(2,4,14,.96)';mc.fillRect(0,0,140,140);
+  const wm=(x,z)=>({x:((x+65)/130)*140,y:((z+65)/130)*140});
+  mc.fillStyle='#14141e';let r=wm(-4,-65),re=wm(4,65);mc.fillRect(r.x,r.y,re.x-r.x,re.y-r.y);r=wm(-65,-4);re=wm(65,4);mc.fillRect(r.x,r.y,re.x-r.x,re.y-r.y);
+  ZONES.forEach(z=>{const p=wm(z.pos[0],z.pos[1]);const hx='#'+(z.color).toString(16).padStart(6,'0');mc.shadowColor=hx;mc.shadowBlur=7;mc.fillStyle=hx;mc.beginPath();mc.arc(p.x,p.y,5,0,Math.PI*2);mc.fill();mc.shadowBlur=0;});
+  const cp=wm(carPos.x,carPos.z);mc.save();mc.translate(cp.x,cp.y);mc.rotate(carAngle+Math.PI);mc.shadowColor='#2d8dff';mc.shadowBlur=8;mc.fillStyle='#2d8dff';mc.beginPath();mc.moveTo(0,-7);mc.lineTo(4,5);mc.lineTo(-4,5);mc.closePath();mc.fill();mc.shadowBlur=0;mc.restore();
+}
+
+const cur=document.getElementById('cur'),cring=document.getElementById('cring');
+let mx=W/2,my=H/2,rx=W/2,ry=H/2;
+window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+const camLookV=new THREE.Vector3(),camTgt=new THREE.Vector3();
+const clock=new THREE.Clock();let fn=0;
+
+function animate(){
+  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05);fn++;
+  cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*.18;ry+=(my-ry)*.18;cring.style.left=rx+'px';cring.style.top=ry+'px';
+
+  if(started&&!panelOpen){
+    const boost=keys['shift'];
+    const maxF=boost?20:12,maxB=boost?-8:-5,aF=boost?32:22,aB=18;
+    if(keys['w']||keys['up'])carSpeed=Math.min(carSpeed+aF*dt,maxF);
+    else if(keys['s']||keys['down'])carSpeed=Math.max(carSpeed-aB*dt,maxB);
+    else{carSpeed*=.86;if(Math.abs(carSpeed)<.04)carSpeed=0;}
+    let tIn=0;if(keys['a']||keys['left'])tIn=1;if(keys['d']||keys['right'])tIn=-1;
+    const sf=Math.min(1,Math.abs(carSpeed)/4);
+    if(sf>.02)carAngle+=tIn*3.0*dt*Math.sign(carSpeed)*sf*(1-Math.min(.5,Math.abs(carSpeed)/maxF*.5));
+    steer+=(tIn*.5-steer)*.16;
+    carPos.x=Math.max(-65,Math.min(65,carPos.x+Math.sin(carAngle)*carSpeed*dt));
+    carPos.z=Math.max(-65,Math.min(65,carPos.z+Math.cos(carAngle)*carSpeed*dt));
+    car.position.set(carPos.x,0,carPos.z);car.rotation.y=carAngle;carShad.position.set(carPos.x,.01,carPos.z);
+    wrot+=carSpeed*dt*1.5;
+    wheels.forEach((w,i)=>{w.children[0].rotation.x=wrot;if(i<2)w.rotation.y=steer*.55;});
+    carBody.rotation.z=-steer*.06;carBody.rotation.x=-carSpeed*.012;carCabin.rotation.z=-steer*.04;
+    document.getElementById('spv').textContent=String(Math.abs(Math.round(carSpeed*8)));
+    // Pedestrians
+    peds.forEach(p=>{
+      if(p.knocked){p.knockTime+=dt;p.vel.y-=18*dt;p.mesh.position.addScaledVector(p.vel,dt);p.mesh.rotation.x+=dt*4;p.mesh.rotation.z+=dt*3;if(p.mesh.position.y<0)p.mesh.position.y=0;if(p.knockTime>5){p.knocked=false;p.knockTime=0;p.mesh.rotation.set(0,0,0);p.mesh.position.y=0;p.vel.set(0,0,0);}return;}
+      p.angle+=p.spd*dt;p.mesh.position.x=p.cx+Math.cos(p.angle)*p.pr;p.mesh.position.z=p.cz+Math.sin(p.angle)*p.pr;p.mesh.rotation.y=-p.angle+Math.PI/2;p.phase+=dt*4.5;
+      p.lL.rotation.x=Math.sin(p.phase)*.5;p.lR.rotation.x=-Math.sin(p.phase)*.5;p.aL.rotation.x=-Math.sin(p.phase)*.35;p.aR.rotation.x=Math.sin(p.phase)*.35;
+      const dpx=p.mesh.position.x-carPos.x,dpz=p.mesh.position.z-carPos.z;
+      if(Math.hypot(dpx,dpz)<1.4&&Math.abs(carSpeed)>3){p.knocked=true;p.knockTime=0;const nm=Math.hypot(dpx,dpz)||1;p.vel.set((dpx/nm)*Math.abs(carSpeed)*.35,4+Math.random()*2,(dpz/nm)*Math.abs(carSpeed)*.35);}
+    });
+    // NPC
+    npcCars.forEach(c=>{c.pos+=c.spd*dt;if(c.pos>70)c.pos=-70;else if(c.pos<-70)c.pos=70;const bob=Math.sin(c.pos*.4)*.012;if(c.axis==='x'){c.mesh.position.set(c.pos,bob,c.lane);c.mesh.rotation.y=c.spd>0?Math.PI/2:-Math.PI/2;}else{c.mesh.position.set(c.lane,bob,c.pos);c.mesh.rotation.y=c.spd>0?0:Math.PI;}const wr=c.pos*1.2;c.wheels.forEach(w=>{w.children[0].rotation.x=wr;});});
+    if(fn%3===0)spawnPart();updParts(dt);checkProx();
+  }
+  // Billboards
+  bigBoards.forEach(b=>{b.timer+=dt;b.pulse+=dt*2.4;if(b.timer>4){b.timer=0;b.idx=(b.idx+1)%b.messages.length;}if(fn%8===0)drawBoard(b);});
+  // Traffic lights
+  tLights.forEach(tl=>{tl.timer+=dt;const cyc=[4.5,1.5,4.5];if(tl.timer>cyc[tl.state]){tl.timer=0;tl.state=(tl.state+1)%3;}const onI=tl.state===2?0:tl.state===1?1:2;const cols=[0xff3344,0xffcc22,0x33dd66];tl.bulbs.forEach((b,i)=>b.material.color.setHex(i===onI?cols[i]:0x222233));});
+  // Markers
+  const t=clock.elapsedTime;
+  markers.forEach((m,i)=>{m.group.rotation.y=t*.5;m.pillar.position.y=3.75+Math.sin(t*2+i)*.25;m.pillar.material.opacity=.75+Math.sin(t*3+i)*.18;if(m.beam){m.beam.material.opacity=.14+Math.sin(t*1.6+i)*.08;m.beam.rotation.y=t*.3;}});
+  // Camera
+  if(mode==='ironman'){
+    const imH=7+Math.abs(carSpeed)*.15;
+    camTgt.set(carPos.x+Math.sin(carAngle)*.3,imH+.2,carPos.z+Math.cos(carAngle)*.3);
+    camera.position.lerp(camTgt,.1);
+    camLookV.lerp(new THREE.Vector3(carPos.x+Math.sin(carAngle)*25,imH-1.5,carPos.z+Math.cos(carAngle)*25),.1);
+  } else if(aerialView){
+    camera.position.lerp(new THREE.Vector3(carPos.x,70,carPos.z+.01),.06);camLookV.lerp(new THREE.Vector3(carPos.x,0,carPos.z),.08);
+  } else {
+    const dist=13+Math.abs(carSpeed)*.11,ht=6+Math.abs(carSpeed)*.03;
+    camTgt.set(carPos.x-Math.sin(carAngle)*dist,ht,carPos.z-Math.cos(carAngle)*dist);
+    camera.position.lerp(camTgt,.1);camLookV.lerp(new THREE.Vector3(carPos.x+Math.sin(carAngle)*4,1.5,carPos.z+Math.cos(carAngle)*4),.12);
+  }
+  camera.lookAt(camLookV);
+  if(fn%3===0)drawMap();
+  renderer.render(scene,camera);
+}
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+animate();
+</script>
+</body>
+</html>
